@@ -1,0 +1,119 @@
+# src/crew_forge/config/tasks.yaml
+analyze_requirements_task:
+  description: >
+    Carefully read the user's description provided in '{user_crew_description}'.
+    Identify the primary goal of the new crew, the types of expertise (roles) needed,
+    any specific tools or data sources mentioned or implied, and any preferences
+    for how the agents should interact (workflow). Produce a structured summary
+    of these requirements.
+  expected_output: >
+    A structured document outlining:
+    1.  New Crew's Primary Goal.
+    2.  List of Proposed Agent Roles and their core responsibilities.
+    3.  List of potential Tools required (if any).
+    4.  Suggested Workflow/Process characteristics (e.g., sequential steps, parallel processing needs).
+    5.  Any key constraints or specific functionalities requested.
+  agent: requirements_analyst
+
+design_crew_architecture_task:
+  description: >
+    Based on the structured requirements summary, design the architecture for the new CrewAI crew.
+    Finalize agents and roles. Outline necessary tasks and map them to agents.
+    Decide on the Crew process (sequential or hierarchical).
+    Detail data flow. Crucially, specify any standard `crewai_tools` needed (e.g., `SerperDevTool`) and the agent requiring them.
+    Note if custom tools seem necessary.
+  expected_output: >
+    A comprehensive Crew Architecture Plan detailing:
+    1.  Final list of Agents with defined roles.
+    2.  List of Tasks with descriptions and assigned agent for each.
+    3.  Chosen Crew Process (Process.sequential or Process.hierarchical).
+    4.  Task dependencies and data flow description.
+    5.  List of required standard tools (full import name) and the agent they belong to, OR indication if custom tools are needed.
+  agent: crew_architect
+  context:
+    - analyze_requirements_task
+
+define_agents_yaml_task:
+  description: >
+    Write the `agents.yaml` content. Define each agent using a `snake_case` name
+    as the key directly under the root level. Craft high-quality role, goal, and backstory,
+    embedding tool usage guidance in backstories if applicable.
+  expected_output: >
+    Complete and valid YAML for `agents.yaml` with root-level, `snake_case` keys
+    and high-quality, context-rich prompts.
+  agent: agent_definer
+  context:
+    - design_crew_architecture_task
+
+define_tasks_yaml_task:
+  description: >
+    Write the `tasks.yaml` content. Use descriptive `snake_case` NAMED KEYS directly
+    under the root level for each task. Create detailed step-by-step descriptions and
+    specific expected outputs. Guide tool usage within descriptions if necessary.
+  expected_output: >
+    Complete and valid YAML for `tasks.yaml` using root-level, `snake_case` named keys,
+    with detailed descriptions and specific expected outputs.
+  agent: task_definer
+  context:
+    - design_crew_architecture_task
+
+generate_crew_py_task:
+  description: >
+    Generate `crew.py` code. Use `@CrewBase` defining config file paths. Implement `@agent` and `@task`
+    methods using `snake_case` names that EXACTLY match the `snake_case` keys in YAML.
+    Load config using `self.config['key']`. Handle tools per plan. Use `verbose=True`.
+  expected_output: >
+    Complete, correct `crew.py` code loading config from files, using matching `snake_case` names
+    for methods and YAML keys, handling tools, and setting `verbose=True`.
+  agent: code_generator
+  context:
+    - define_agents_yaml_task
+    - define_tasks_yaml_task
+    - design_crew_architecture_task
+
+generate_main_py_task:
+  description: >
+    Generate standard `main.py`. Import the specific `snake_case` CrewBase subclass
+    (e.g., `VibeCodingNewsCrew`) from `[package_name].crew`. Instantiate the specific class.
+    Include boilerplate run logic (`os.makedirs`, kickoff, `if __name__`).
+  expected_output: >
+    Complete `main.py` code correctly importing and instantiating the specific (`snake_case` named) CrewBase subclass.
+  agent: code_generator
+  context:
+    - generate_crew_py_task
+    - design_crew_architecture_task
+
+review_configuration_task:
+  description: >
+    Critically review `agents.yaml`, `tasks.yaml`, `crew.py`, `main.py`. Verify:
+    - Correctness, tool handling, boolean verbose.
+    - **Strict `snake_case` consistency between YAML keys and Python `@agent`/`@task` method names.**
+    - Prompt Quality & Tool Guidance.
+    - `crew.py` loads config from file paths.
+    - `main.py` imports/instantiates the correct specific `snake_case` CrewBase subclass.
+  expected_output: >
+    A detailed review report confirming `snake_case` consistency and other checks,
+    or detailing required corrections.
+  agent: configuration_reviewer
+  context:
+    - define_agents_yaml_task
+    - define_tasks_yaml_task
+    - generate_crew_py_task
+    - generate_main_py_task
+
+assemble_output_task:
+  description: >
+    Assemble the final, approved content for `agents.yaml`, `tasks.yaml`, `crew.py`, `main.py`,
+    and include a standard boilerplate `pyproject.toml` template.
+    Present all content clearly in a single Markdown file with clear sections/filenames.
+  expected_output: >
+    A single Markdown file containing the final content for `agents.yaml`, `tasks.yaml`, `crew.py`,
+    `main.py`, and a boilerplate `pyproject.toml` template.
+  agent: configuration_reviewer
+  context:
+    - review_configuration_task
+    - define_agents_yaml_task
+    - define_tasks_yaml_task
+    - generate_crew_py_task
+    - generate_main_py_task
+  output_file: output/generated_crew_files.md
