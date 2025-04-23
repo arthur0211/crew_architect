@@ -1,6 +1,6 @@
 # CrewArchitect Crew
 
-Welcome to the CrewArchitect project, powered by [crewAI](https://crewai.com). This crew is designed to **generate the configuration files (agents.yaml, tasks.yaml, crew.py, main.py, and a pyproject.toml template) for a new CrewAI project based on a user-provided description.** Our goal is to automate the initial setup of new crews, allowing you to focus on refining the generated prompts and logic.
+Welcome to the CrewArchitect project. This crew is designed to **generate the configuration files (agents.yaml, tasks.yaml, crew.py, main.py, and a pyproject.toml template) for a new CrewAI project based on a user-provided description.** Our goal is to automate the initial setup of new crews, allowing you to focus on refining the generated prompts and logic.
 
 ## Installation
 
